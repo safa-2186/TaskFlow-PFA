@@ -12,12 +12,7 @@ app.listen(5000, () => {
   console.log("Server started on port 5000");
 });
 
-let tasks = [
-  { id: 1, title: "Design UI", status: "in Progress" },
-  { id: 2, title: "Build backend", status: "in Progress" },
-  { id: 3, title: "Build Database and API", status: "To Do" },
-  { id: 4, title: "Build frontend", status: "To Do" }
-];
+
 
 app.get("/tasks", (req, res) => {
   res.json(tasks);
@@ -59,3 +54,19 @@ app.put("/tasks/:id", (req, res) => {
 });
 
 
+
+
+const express = require('express');
+const app = express();
+const db = require('./db');
+
+app.use(express.json());
+
+// test route
+app.get('/', (req, res) => {
+  res.send('Server is running ');
+});
+
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
