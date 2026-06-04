@@ -10,7 +10,7 @@ app.use(cors());
 
 
 app.get("/", (req, res) => {
-  res.send("Backend running smoothly! Yaaay");
+  res.send("It's working");
 });
 
 app.use("/tasks", taskRoutes);
