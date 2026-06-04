@@ -15,6 +15,7 @@ app.get("/", (req, res) => {
 
 app.use("/tasks", taskRoutes);
 
+
 db.getConnection()
   .then((conn) => {
     conn.release();
@@ -26,5 +27,11 @@ db.getConnection()
   .catch((err) => {
     console.error("DB connection failed:", err.message);
   });
+
+
+
+ 
+
+
 
 
