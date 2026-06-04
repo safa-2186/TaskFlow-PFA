@@ -1,0 +1,57 @@
+const db = require("../db");
+
+// Get all tasks
+exports.getAllTasks = (req, res) => {
+  db.query("SELECT * FROM tasks", (err, results) => {
+    if (err) return res.status(500).send(err);
+
+    res.json(results);
+  });
+};
+
+// Create task
+exports.createTask = (req, res) => {
+  const { title, user_id } = req.body;
+
+  if (!title) {
+    return res.status(400).send("Title is required");
+  }
+
+  db.query(
+    "INSERT INTO tasks (title, user_id) VALUES (?, ?)",
+    [title, user_id],
+    (err, result) => {
+      if (err) return res.status(500).send(err);
+
+      res.send("Task created successfully");
+    }
+  );
+};
+
+// Update task
+exports.updateTask = (req, res) => {
+  const { title, status } = req.body;
+
+  db.query(
+    "UPDATE tasks SET title=?, status=? WHERE id=?",
+    [title, status, req.params.id],
+    (err, result) => {
+      if (err) return res.status(500).send(err);
+
+      res.send("Task updated successfully");
+    }
+  );
+};
+
+// Delete task
+exports.deleteTask = (req, res) => {
+  db.query(
+    "DELETE FROM tasks WHERE id=?",
+    [req.params.id],
+    (err, result) => {
+      if (err) return res.status(500).send(err);
+
+      res.send("Task deleted successfully");
+    }
+  );
+};
