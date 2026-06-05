@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <title>Flow — Gestionnaire de tâches</title>
+  <title>Taskflow</title>
   <style>
     :root {
       --bg: #f4f7fb;
@@ -911,7 +911,7 @@
                 class="block text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-2">Username or
                 Email</label>
               <div class="relative">
-                <input type="text" id="loginEmail" placeholder="demo" required
+                <input type="text" id="loginEmail" placeholder="Usetname or Email" required
                   class="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl py-3.5 px-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-[15px]">
               </div>
             </div>
@@ -925,7 +925,7 @@
                   class="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors">Forgot password?</a>
               </div>
               <div class="relative">
-                <input type="password" id="loginPassword" placeholder="demo123" required
+                <input type="password" id="loginPassword" placeholder="Password" required
                   class="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl py-3.5 px-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-[15px] pr-12">
                 <button type="button" onclick="togglePasswordVisibility('loginPassword')"
                   class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
@@ -1188,7 +1188,7 @@
             document.getElementById("avatar").textContent =
               user.slice(0, 2).toUpperCase();
 
-            view = "Tableau de bord";
+            view = "Dashboard";
             renderView();
 
             setTimeout(() => {
@@ -1251,7 +1251,7 @@
     <aside>
       <span class="logo">Taskflow<span>.</span></span>
       <nav class="side-nav" id="side-nav"></nav>
-      <button class="logout" id="logout">Déconnexion</button>
+      <button class="logout" id="logout">Sign out</button>
     </aside>
     <main>
       <div class="dash-head">
@@ -1282,7 +1282,7 @@
             <p style="padding:8px;cursor:pointer;">Settings</p>
             <hr>
             <p id="logoutMenu" style="padding:8px;cursor:pointer;color:red;">
-              Logout
+              Sign out
             </p>
           </div>
 
@@ -1310,27 +1310,27 @@
       }
     ];
     const CREDS = { user: "demo", pass: "demo123" };
-    const NAV = ["Tableau de bord", "Tableaux", "Project"];
+    const NAV = ["Dashboard", "Tasks", "Project"];
     let currentUser = null;
-    let view = "Tableau de bord";
+    let view = "Dashboard";
 
-    const STATUSES = ["À faire", "En cours", "Terminé"];
-    const PRIORITIES = { "Basse": "#64748b", "Moyenne": "#2563eb", "Haute": "#dc2626" };
-    const ASSIGNEES = ["Non assigné", "Bob K.", "Alice M.", "Moi"];
+    const STATUSES = ["To Do", "In Progress", "Done"];
+    const PRIORITIES = { "Low": "#64748b", "Medium": "#2563eb", "High": "#dc2626" };
+    const ASSIGNEES = ["No one", "Me", "Safa", "Hafssa"];
 
     const BCOLS = [
-      { id: "todo", title: "À faire", accent: "#2563eb", status: "À faire" },
-      { id: "doing", title: "En cours", accent: "#3b82f6", status: "En cours" },
-      { id: "done", title: "Terminé", accent: "#16a34a", status: "Terminé" },
+      { id: "todo", title: "To Do", accent: "#2563eb", status: "To Do" },
+      { id: "doing", title: "In Progress", accent: "#3b82f6", status: "In Progress" },
+      { id: "done", title: "Done", accent: "#16a34a", status: "Done" },
     ];
     let bid = 5;
     let board = {
       todo: [
-        { id: "b1", text: "Revue du backlog produit", desc: "", priority: "Moyenne", assignee: "Bob K.", due: "2026-06-08" },
-        { id: "b2", text: "Rassembler les références", desc: "", priority: "Basse", assignee: "Non assigné", due: "" },
+        { id: "b1", text: "Revue du backlog produit", desc: "", priority: "Medium", assignee: "Bob K.", due: "2026-06-08" },
+        { id: "b2", text: "Rassembler les références", desc: "", priority: "Medium", assignee: "Non One", due: "" },
       ],
-      doing: [{ id: "b3", text: "Rédiger la première section", desc: "", priority: "Haute", assignee: "Alice M.", due: "2026-06-10" }],
-      done: [{ id: "b4", text: "Configurer l'espace de travail", desc: "", priority: "Basse", assignee: "Moi", due: "" }],
+      doing: [{ id: "b3", text: "Rédiger la première section", desc: "", priority: "High", assignee: "Alice M.", due: "2026-06-10" }],
+      done: [{ id: "b4", text: "Configurer l'espace de travail", desc: "", priority: "High", assignee: "Me", due: "" }],
     };
 
     const $ = (s) => document.querySelector(s);
@@ -1389,23 +1389,23 @@
     function renderView() {
       buildNav();
       const title = $("#view-title"), sub = $("#view-sub"), body = $("#view-body");
-      if (view === "Tableau de bord") {
-        title.textContent = "Bonjour, " + currentUser;
-        sub.textContent = "Voici ce qui se passe dans votre espace de travail.";
+      if (view === "Dashboard") {
+        title.textContent = "Hello, " + currentUser;
+        sub.textContent = " Here’s what’s happening in your workspace.";
         body.innerHTML = dashboardHTML();
-      } else if (view === "Tableaux") {
-        title.textContent = "Tableaux";
-        sub.textContent = "Glissez les cartes entre les colonnes. Cliquez pour modifier.";
+      } else if (view === "Tasks") {
+        title.textContent = "Tasks";
+        sub.textContent = " Drag the cards between the columns. Click to edit.";
         body.innerHTML = '<div class="k-board fade" id="k-board"></div>';
         renderBoard();
       } else {
         title.textContent = view;
-        sub.textContent = "Bientôt disponible.";
-        body.innerHTML = '<div class="empty fade"><span class="icon">◷</span><p>' + view + ' — bientôt disponible.</p></div>';
+        sub.textContent = "Coming soon.";
+        body.innerHTML = '<div class="empty fade"><span class="icon">◷</span><p>' + view + ' — Coming soon.</p></div>';
       }
       if (view === "Projets") {
         title.textContent = "Projets";
-        sub.textContent = "Gérez vos projets";
+        sub.textContent = "Manage your projects";
 
         body.innerHTML = `
     <div class="fade">
@@ -1446,13 +1446,13 @@
 
     function dashboardHTML() {
       const cards = [
-        ["Tâches ouvertes", 8, "#2563eb"], ["En cours", 3, "#3b82f6"],
-        ["Terminées", 24, "#16a34a"], ["En retard", 1, "#dc2626"],
+        ["Tasks open", 8, "#2563eb"], ["In progress", 3, "#3b82f6"],
+        ["Completed", 24, "#16a34a"], ["Overdue", 1, "#dc2626"],
       ];
       const weekly = [4, 7, 3, 8, 6, 9, 5], days = ["D", "L", "M", "M", "J", "V", "S"];
       const activity = [
-        ["Plan Q3 rédigé", "il y a 2 h"], ["'Configuration' terminée", "il y a 5 h"],
-        ["'Références' → Terminé", "hier"], ["Tableau 'Lancement' créé", "il y a 2 j"],
+        ["Q3 plan drafted", "2 hours ago"], ["'Configuration' completed", "5 hours ago"],
+        ["'Références' → completed", "Yesterday"], ["Table 'start' created", "2 days ago"],
       ];
       return `
       <div class="metric-grid fade">
@@ -1461,12 +1461,12 @@
             <div class="val">${v}</div><div class="lbl">${l}</div></div>`).join("")}
       </div>
       <div class="lower fade">
-        <section class="panel"><h3>Cette semaine</h3><div class="chart">
+        <section class="panel"><h3>This Week</h3><div class="chart">
           ${weekly.map((v, i) => `<div class="bar-col">
             <div class="bar" style="height:${v * 11}px"></div>
             <span class="lbl">${days[i]}</span></div>`).join("")}
         </div></section>
-        <section class="panel"><h3>Activité récente</h3><ul class="feed">
+        <section class="panel"><h3>History</h3><ul class="feed">
           ${activity.map(([t, w]) => `<li><span class="dot"></span>
             <span class="txt">${t}</span><span class="when">${w}</span></li>`).join("")}
         </ul></section>
@@ -1483,7 +1483,7 @@
         <div class="k-head"><span class="dot" style="background:${col.accent}"></span>
           <h3>${col.title}</h3><span class="count">${board[col.id].length}</span></div>
         <div class="k-cards"></div>
-        <input class="k-input" placeholder="+ Ajouter une tâche" />`;
+        <input class="k-input" placeholder="+ Add Task" />`;
 
         sec.addEventListener("dragover", (e) => { e.preventDefault(); sec.classList.add("over"); });
         sec.addEventListener("dragleave", () => sec.classList.remove("over"));
