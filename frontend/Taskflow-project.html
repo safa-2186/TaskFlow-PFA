@@ -1020,14 +1020,7 @@
           </div>
         </div>
 
-        <!-- Demo Quick Assist Pill -->
-        <div id="demoPill" class="mt-6 flex flex-col items-center justify-center gap-2">
-          <button onclick="fillDemoCredentials()"
-            class="bg-[#F1F5F9] hover:bg-blue-50 hover:text-blue-700 border border-[#E2E8F0] hover:border-blue-200 text-slate-600 text-[11px] font-semibold tracking-wider py-1.5 px-3.5 rounded-full transition-all inline-flex items-center gap-1.5">
-            <i class="fa-solid fa-bolt text-[10px]"></i>
-            DEMO: AUTOFILL CREDENTIALS
-          </button>
-        </div>
+        
 
       </div>
     </main>
@@ -1094,7 +1087,6 @@
 
         const loginSection = document.getElementById('loginSection');
         const registerSection = document.getElementById('registerSection');
-        const demoPill = document.getElementById('demoPill');
         const errorBanner = document.getElementById('errorBanner');
 
         // Clear errors on tab transition
@@ -1111,7 +1103,7 @@
             // Animate in Register
             registerSection.classList.remove('opacity-0', 'scale-95');
             registerSection.classList.add('opacity-100', 'scale-100');
-            demoPill.classList.add('opacity-0', 'pointer-events-none');
+            
           }, 150);
         } else {
           // Animate out Register
@@ -1124,7 +1116,7 @@
             // Animate in Login
             loginSection.classList.remove('opacity-0', 'scale-95');
             loginSection.classList.add('opacity-100', 'scale-100');
-            demoPill.classList.remove('opacity-0', 'pointer-events-none');
+            
           }, 150);
         }
       }
@@ -1159,17 +1151,7 @@
         toast.classList.remove('flex', 'toast-animate');
       }
 
-      // Auto-fill mock credentials for validation tests
-      function fillDemoCredentials() {
-        document.getElementById('loginEmail').value = "demo";
-        document.getElementById('loginPassword').value = "demo123";
-        // Highlight active feedback
-        const inputs = [document.getElementById('loginEmail'), document.getElementById('loginPassword')];
-        inputs.forEach(input => {
-          input.classList.add('ring-2', 'ring-blue-100', 'border-blue-300');
-          setTimeout(() => input.classList.remove('ring-2', 'ring-blue-100', 'border-blue-300'), 1000);
-        });
-      }
+      
 
       // Toggle password character visibility
       function togglePasswordVisibility(inputId) {
