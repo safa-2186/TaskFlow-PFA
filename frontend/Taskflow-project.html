@@ -1603,13 +1603,30 @@ if (type === 'login') {
         });
 
         const input = sec.querySelector(".k-input");
-        input.addEventListener("keydown", (e) => {
-          if (e.key !== "Enter") return;
-          const text = input.value.trim(); if (!text) return;
-          board[col.id].push({ id: "b" + bid++, text, desc: "", priority: "Moyenne", assignee: "Non assigné", due: "" });
-          renderBoard();
-        });
+        input.addEventListener("keydown", async (e) => {
+  if (e.key !== "Enter") return;
+  const text = input.value.trim(); if (!text) return;
 
+  try {
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+    const res = await fetch("http://localhost:5000/tasks", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ title: text, user_id: userId, status: col.id === "doing" ? "in_progress" : col.id })
+    });
+    const data = await res.json();
+    board[col.id].push({ id: data.taskId, text, desc: "", priority: "Medium", assignee: "No one", due: "" });
+  } catch (err) {
+    console.error("Failed to create task:", err);
+    board[col.id].push({ id: "b" + bid++, text, desc: "", priority: "Medium", assignee: "No one", due: "" });
+  }
+
+  renderBoard();
+});
         wrap.appendChild(sec);
       });
     }

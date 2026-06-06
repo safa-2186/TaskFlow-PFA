@@ -65,3 +65,24 @@ exports.deleteTask = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// PATCH TASK STATUS (drag-drop)
+exports.patchTaskStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (!["todo", "in_progress", "done"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    await db.query(
+      "UPDATE tasks SET status=? WHERE id=?",
+      [status, req.params.id]
+    );
+
+    res.json({ message: "Status updated" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
