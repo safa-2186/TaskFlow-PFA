@@ -143,6 +143,14 @@
     }
 
     .nav-btn {
+
+      background: #fff;
+      border: 1px solid var(--line2);
+      color: var(--text);
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+
       background: #1d4ed8;
       border: 1px solid var(--line2);
       color: var(--bg);
@@ -150,6 +158,7 @@
       border-radius: 8px;
       font-size: 13px;
       font-weight: 600;
+
     }
 
     .hero {
@@ -1155,6 +1164,88 @@
       
 
       // Toggle password character visibility
+
+      async function handleAuth(event, type) {
+  event.preventDefault();
+  const errorBanner = document.getElementById('errorBanner');
+  const errorMessage = document.getElementById('errorMessage');
+  errorBanner.classList.add('hidden');
+
+  if (type === 'login') {
+    const email    = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+
+    try {
+      const res  = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        errorMessage.textContent = data.message || 'Login failed.';
+        errorBanner.classList.remove('hidden');
+        showToast(data.message || 'Login failed.', true);
+        return;
+      }
+
+      // Save token and user to localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      // Update UI with real user name from database
+      currentUser = data.user.user_name;
+      document.getElementById('userName').textContent = currentUser;
+      document.getElementById('avatar').textContent = currentUser.slice(0, 2).toUpperCase();
+
+      showToast('Success! Logging you in...', false);
+      view = 'Dashboard';
+      renderView();
+      setTimeout(() => show('dashboard'), 1000);
+
+    } catch (err) {
+      showToast('Could not reach the server. Is it running?', true);
+    }
+
+  } else if (type === 'register') {
+    const user_name = document.getElementById('registerName').value;
+    const email     = document.getElementById('registerEmail').value;
+    const password  = document.getElementById('registerPassword').value;
+    const terms     = document.getElementById('terms').checked;
+
+    if (!terms) {
+      showToast('Please accept the terms to continue.', true);
+      return;
+    }
+
+    try {
+      const res  = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_name, email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        errorMessage.textContent = data.message || 'Registration failed.';
+        errorBanner.classList.remove('hidden');
+        showToast(data.message || 'Registration failed.', true);
+        return;
+      }
+
+      showToast(`Account created for ${user_name}! Please sign in.`, false);
+      setTimeout(() => switchView(null, 'login'), 2000);
+
+    } catch (err) {
+      showToast('Could not reach the server. Is it running?', true);
+    }
+  }
+}
+ 
+
       function togglePasswordVisibility(inputId) {
         const input = document.getElementById(inputId);
         const eyeIcon = document.getElementById(inputId + 'Eye');
@@ -1279,6 +1370,7 @@ if (type === 'login') {
 
 }
 }
+
 
       // Custom Modal management for Password Reset
       function showResetModal(event) {
@@ -1412,8 +1504,14 @@ if (type === 'login') {
 
 
     $("#logout").addEventListener("click", () => {
+
+  localStorage.removeItem('token');  // ← ADD
+  localStorage.removeItem('user');   // ← ADD
+  currentUser = null;
+
   currentUser = null;
   localStorage.removeItem("token");
+
 
   const email = document.getElementById("loginEmail");
   const password = document.getElementById("loginPassword");
@@ -1422,7 +1520,28 @@ if (type === 'login') {
   if (password) password.value = "";
 
   show("home");
+
+      const avatar = document.getElementById("avatar");
+      const menu = document.getElementById("profileMenu");
+
+      if (avatar && menu) {
+        avatar.addEventListener("click", (e) => {
+          e.stopPropagation();
+
+          menu.style.display =
+            menu.style.display === "block"
+              ? "none"
+              : "block";
+        });
+
+        document.addEventListener("click", () => {
+          menu.style.display = "none";
+        });
+      }
+    });
+
 });
+
 
     function buildNav() {
       const nav = $("#side-nav"); nav.innerHTML = "";
@@ -1444,6 +1563,11 @@ if (type === 'login') {
         body.innerHTML = dashboardHTML();
       } else if (view === "Tasks") {
         title.textContent = "Tasks";
+
+        sub.textContent = " Drag the cards between the columns. Click to edit.";
+        body.innerHTML = '<div class="k-board fade" id="k-board"></div>';
+        renderBoard();
+
         sub.textContent = "Drag the cards between the columns. Click to edit.";
         body.innerHTML = '<div class="k-board fade" id="k-board"></div>';
         loadTasks().then(tasks => {
@@ -1452,6 +1576,7 @@ if (type === 'login') {
           }
           renderBoard();
         });
+
       } else {
         title.textContent = view;
         sub.textContent = "Coming soon.";
@@ -1541,6 +1666,16 @@ if (type === 'login') {
 
         sec.addEventListener("dragover", (e) => { e.preventDefault(); sec.classList.add("over"); });
         sec.addEventListener("dragleave", () => sec.classList.remove("over"));
+
+        sec.addEventListener("drop", () => {
+          sec.classList.remove("over");
+          if (!dragData || dragData.from === col.id) return;
+          const task = board[dragData.from].find((t) => t.id === dragData.id);
+          board[dragData.from] = board[dragData.from].filter((t) => t.id !== dragData.id);
+          board[col.id].push(task);
+          dragData = null; renderBoard();
+        });
+
         sec.addEventListener("drop", async () => {
   sec.classList.remove("over");
   if (!dragData || dragData.from === col.id) return;
@@ -1567,6 +1702,7 @@ if (type === 'login') {
   renderBoard();
 });
 
+
         const cards = sec.querySelector(".k-cards");
         board[col.id].forEach((t) => {
           const c = document.createElement("article");
@@ -1586,6 +1722,13 @@ if (type === 'login') {
             if (e.target.classList.contains("del")) return;
             openModal(t.id);
           });
+
+          c.querySelector(".del").addEventListener("click", (e) => {
+            e.stopPropagation();
+            board[col.id] = board[col.id].filter((x) => x.id !== t.id);
+            renderBoard();
+          });
+
           c.querySelector(".del").addEventListener("click", async (e) => {
   e.stopPropagation();
   try {
@@ -1600,10 +1743,19 @@ if (type === 'login') {
   board[col.id] = board[col.id].filter((x) => x.id !== t.id);
   renderBoard();
 });
+
           cards.appendChild(c);
         });
 
         const input = sec.querySelector(".k-input");
+
+        input.addEventListener("keydown", (e) => {
+          if (e.key !== "Enter") return;
+          const text = input.value.trim(); if (!text) return;
+          board[col.id].push({ id: "b" + bid++, text, desc: "", priority: "Moyenne", assignee: "Non assigné", due: "" });
+          renderBoard();
+        });
+
         input.addEventListener("keydown", async (e) => {
   if (e.key !== "Enter") return;
   const text = input.value.trim(); if (!text) return;
@@ -1628,6 +1780,7 @@ if (type === 'login') {
 
   renderBoard();
 });
+
         wrap.appendChild(sec);
       });
     }
@@ -1676,6 +1829,22 @@ if (type === 'login') {
       $("#ov").addEventListener("click", (e) => { if (e.target.id === "ov") close(); });
       function esc(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); } }
       document.addEventListener("keydown", esc);
+
+      $("#m-save").addEventListener("click", () => {
+        t.text = $("#m-title").value.trim() || t.text;
+        t.desc = $("#m-desc").value;
+        t.priority = $("#m-prio").value;
+        t.assignee = $("#m-assignee").value;
+        t.due = $("#m-due").value;
+        const newStatus = $("#m-status").value;
+        const targetCol = BCOLS.find((c) => c.status === newStatus).id;
+        if (targetCol !== col) {
+          board[col] = board[col].filter((x) => x.id !== id);
+          board[targetCol].push(t);
+        }
+        close(); renderBoard();
+      });
+
       $("#m-save").addEventListener("click", async () => {
   t.text = $("#m-title").value.trim() || t.text;
   t.desc = $("#m-desc").value;
@@ -1710,6 +1879,7 @@ if (type === 'login') {
   close();
   renderBoard();
 });
+
     }
 
     show("home");
@@ -1730,6 +1900,8 @@ if (type === 'login') {
         menu.style.display = "none";
       });
     }
+
+
 
     async function loadTasks() {
   try {
@@ -1765,6 +1937,7 @@ function formatTasks(tasks) {
   });
   return board;
 }
+
   </script>
 </body>
 
