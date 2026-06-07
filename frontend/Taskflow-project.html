@@ -1154,66 +1154,86 @@
       
 
       // Toggle password character visibility
-      function togglePasswordVisibility(inputId) {
-        const input = document.getElementById(inputId);
-        const eyeIcon = document.getElementById(inputId + 'Eye');
-        if (input.type === "password") {
-          input.type = "text";
-          eyeIcon.classList.remove('fa-eye');
-          eyeIcon.classList.add('fa-eye-slash');
-        } else {
-          input.type = "password";
-          eyeIcon.classList.remove('fa-eye-slash');
-          eyeIcon.classList.add('fa-eye');
-        }
+      async function handleAuth(event, type) {
+  event.preventDefault();
+  const errorBanner = document.getElementById('errorBanner');
+  const errorMessage = document.getElementById('errorMessage');
+  errorBanner.classList.add('hidden');
+
+  if (type === 'login') {
+    const email    = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+
+    try {
+      const res  = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        errorMessage.textContent = data.message || 'Login failed.';
+        errorBanner.classList.remove('hidden');
+        showToast(data.message || 'Login failed.', true);
+        return;
       }
 
-      // Authentication simulation & error message trigger
-      function handleAuth(event, type) {
-        event.preventDefault();
-        const errorBanner = document.getElementById('errorBanner');
-        const errorMessage = document.getElementById('errorMessage');
+      // Save token and user to localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
-        if (type === 'login') {
-          const user = document.getElementById('loginEmail').value;
-          const pass = document.getElementById('loginPassword').value;
+      // Update UI with real user name from database
+      currentUser = data.user.user_name;
+      document.getElementById('userName').textContent = currentUser;
+      document.getElementById('avatar').textContent = currentUser.slice(0, 2).toUpperCase();
 
-          if (user === 'demo' && pass === 'demo123') {
-            document.getElementById("userName").textContent = user;
-            document.getElementById("avatar").textContent = user.slice(0, 2).toUpperCase();
+      showToast('Success! Logging you in...', false);
+      view = 'Dashboard';
+      renderView();
+      setTimeout(() => show('dashboard'), 1000);
 
-            errorBanner.classList.add('hidden');
+    } catch (err) {
+      showToast('Could not reach the server. Is it running?', true);
+    }
 
-            currentUser = user;
-            document.getElementById("avatar").textContent =
-              user.slice(0, 2).toUpperCase();
+  } else if (type === 'register') {
+    const user_name = document.getElementById('registerName').value;
+    const email     = document.getElementById('registerEmail').value;
+    const password  = document.getElementById('registerPassword').value;
+    const terms     = document.getElementById('terms').checked;
 
-            view = "Dashboard";
-            renderView();
+    if (!terms) {
+      showToast('Please accept the terms to continue.', true);
+      return;
+    }
 
-            setTimeout(() => {
-              show("dashboard");
-            }, 1000);
+    try {
+      const res  = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_name, email, password }),
+      });
 
-            showToast("Success! Logging you into Flow...", false);
-          } else {
-            errorMessage.textContent = "Incorrect username or password.";
-            errorBanner.classList.remove('hidden');
-            showToast("Login failed. Check your credentials.", true);
-          }
-        } else if (type === 'register') {
-          const name = document.getElementById('registerName').value;
-          const email = document.getElementById('registerEmail').value;
-          const terms = document.getElementById('terms').checked;
+      const data = await res.json();
 
-          if (terms) {
-            showToast(`Account created for ${name}! Please check your email to activate.`, false);
-            setTimeout(() => {
-              switchView(null, 'login');
-            }, 2000);
-          }
-        }
+      if (!res.ok) {
+        errorMessage.textContent = data.message || 'Registration failed.';
+        errorBanner.classList.remove('hidden');
+        showToast(data.message || 'Registration failed.', true);
+        return;
       }
+
+      showToast(`Account created for ${user_name}! Please sign in.`, false);
+      setTimeout(() => switchView(null, 'login'), 2000);
+
+    } catch (err) {
+      showToast('Could not reach the server. Is it running?', true);
+    }
+  }
+}
+ 
 
       // Custom Modal management for Password Reset
       function showResetModal(event) {
@@ -1347,15 +1367,17 @@
 
 
     $("#logout").addEventListener("click", () => {
-      currentUser = null;
+  localStorage.removeItem('token');  // ← ADD
+  localStorage.removeItem('user');   // ← ADD
+  currentUser = null;
 
-      const email = document.getElementById("loginEmail");
-      const password = document.getElementById("loginPassword");
+  const email = document.getElementById("loginEmail");
+  const password = document.getElementById("loginPassword");
 
-      if (email) email.value = "";
-      if (password) password.value = "";
+  if (email) email.value = "";
+  if (password) password.value = "";
 
-      show("home");
+  show("home");
       const avatar = document.getElementById("avatar");
       const menu = document.getElementById("profileMenu");
 
