@@ -1170,51 +1170,115 @@
       }
 
       // Authentication simulation & error message trigger
-      function handleAuth(event, type) {
+      async function handleAuth(event, type) {
         event.preventDefault();
         const errorBanner = document.getElementById('errorBanner');
         const errorMessage = document.getElementById('errorMessage');
+if (type === 'login') {
 
-        if (type === 'login') {
-          const user = document.getElementById('loginEmail').value;
-          const pass = document.getElementById('loginPassword').value;
+  const user = document.getElementById('loginEmail').value;
+  const pass = document.getElementById('loginPassword').value;
 
-          if (user === 'demo' && pass === 'demo123') {
-            document.getElementById("userName").textContent = user;
-            document.getElementById("avatar").textContent = user.slice(0, 2).toUpperCase();
+  try {
 
-            errorBanner.classList.add('hidden');
+    const res = await fetch("http://localhost:5000/users/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email: user,
+        password: pass
+      })
+    });
 
-            currentUser = user;
-            document.getElementById("avatar").textContent =
-              user.slice(0, 2).toUpperCase();
+    const data = await res.json();
 
-            view = "Dashboard";
-            renderView();
+    if (res.ok) {
+  // Save token
+  if (data.token) localStorage.setItem("token", data.token);
 
-            setTimeout(() => {
-              show("dashboard");
-            }, 1000);
+  currentUser = data.user.user_name;
+  document.getElementById("userName").textContent = currentUser;
+  document.getElementById("avatar").textContent =
+    currentUser.slice(0, 2).toUpperCase();
+  errorBanner.classList.add("hidden");
+  view = "Dashboard";
+  renderView();
+  setTimeout(() => {
+    show("dashboard");
+  }, 500);
+  showToast("Login successful!", false);
+} else {
 
-            showToast("Success! Logging you into Flow...", false);
-          } else {
-            errorMessage.textContent = "Incorrect username or password.";
-            errorBanner.classList.remove('hidden');
-            showToast("Login failed. Check your credentials.", true);
-          }
-        } else if (type === 'register') {
-          const name = document.getElementById('registerName').value;
-          const email = document.getElementById('registerEmail').value;
-          const terms = document.getElementById('terms').checked;
+      errorMessage.textContent =
+        data.message || "Incorrect username or password.";
 
-          if (terms) {
-            showToast(`Account created for ${name}! Please check your email to activate.`, false);
-            setTimeout(() => {
-              switchView(null, 'login');
-            }, 2000);
-          }
-        }
-      }
+      errorBanner.classList.remove("hidden");
+
+      showToast("Login failed", true);
+    }
+
+  } catch (err) {
+
+    console.error(err);
+
+    showToast("Cannot connect to server", true);
+
+  }
+
+}          else if (type === 'register') {
+
+  const name = document.getElementById('registerName').value;
+  const email = document.getElementById('registerEmail').value;
+  const password = document.getElementById('registerPassword').value;
+  const terms = document.getElementById('terms').checked;
+
+  if (!terms) {
+    showToast("Please accept the terms", true);
+    return;
+  }
+
+  try {
+
+    const res = await fetch("http://localhost:5000/users/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+      user_name: name,
+        email,
+        password
+})
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+
+      showToast("Account created successfully!", false);
+
+      setTimeout(() => {
+        switchView(null, "login");
+      }, 1500);
+
+    } else {
+
+      showToast(data.message || "Registration failed", true);
+
+    }
+
+  } catch (err) {
+
+    console.error(err);
+
+    showToast("Cannot connect to server", true);
+
+  }
+
+}
+}
 
       // Custom Modal management for Password Reset
       function showResetModal(event) {
@@ -1348,33 +1412,17 @@
 
 
     $("#logout").addEventListener("click", () => {
-      currentUser = null;
+  currentUser = null;
+  localStorage.removeItem("token");
 
-      const email = document.getElementById("loginEmail");
-      const password = document.getElementById("loginPassword");
+  const email = document.getElementById("loginEmail");
+  const password = document.getElementById("loginPassword");
 
-      if (email) email.value = "";
-      if (password) password.value = "";
+  if (email) email.value = "";
+  if (password) password.value = "";
 
-      show("home");
-      const avatar = document.getElementById("avatar");
-      const menu = document.getElementById("profileMenu");
-
-      if (avatar && menu) {
-        avatar.addEventListener("click", (e) => {
-          e.stopPropagation();
-
-          menu.style.display =
-            menu.style.display === "block"
-              ? "none"
-              : "block";
-        });
-
-        document.addEventListener("click", () => {
-          menu.style.display = "none";
-        });
-      }
-    });
+  show("home");
+});
 
     function buildNav() {
       const nav = $("#side-nav"); nav.innerHTML = "";
@@ -1396,9 +1444,14 @@
         body.innerHTML = dashboardHTML();
       } else if (view === "Tasks") {
         title.textContent = "Tasks";
-        sub.textContent = " Drag the cards between the columns. Click to edit.";
+        sub.textContent = "Drag the cards between the columns. Click to edit.";
         body.innerHTML = '<div class="k-board fade" id="k-board"></div>';
-        renderBoard();
+        loadTasks().then(tasks => {
+          if (tasks) {
+            board = formatTasks(tasks);
+          }
+          renderBoard();
+        });
       } else {
         title.textContent = view;
         sub.textContent = "Coming soon.";
@@ -1488,14 +1541,31 @@
 
         sec.addEventListener("dragover", (e) => { e.preventDefault(); sec.classList.add("over"); });
         sec.addEventListener("dragleave", () => sec.classList.remove("over"));
-        sec.addEventListener("drop", () => {
-          sec.classList.remove("over");
-          if (!dragData || dragData.from === col.id) return;
-          const task = board[dragData.from].find((t) => t.id === dragData.id);
-          board[dragData.from] = board[dragData.from].filter((t) => t.id !== dragData.id);
-          board[col.id].push(task);
-          dragData = null; renderBoard();
-        });
+        sec.addEventListener("drop", async () => {
+  sec.classList.remove("over");
+  if (!dragData || dragData.from === col.id) return;
+  const task = board[dragData.from].find((t) => t.id === dragData.id);
+  board[dragData.from] = board[dragData.from].filter((t) => t.id !== dragData.id);
+  board[col.id].push(task);
+
+  // Save new status to backend
+  try {
+    const token = localStorage.getItem("token");
+    await fetch(`http://localhost:5000/tasks/${task.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ status: col.id === "doing" ? "in_progress" : col.id })
+    });
+  } catch (err) {
+    console.error("Failed to update task status:", err);
+  }
+
+  dragData = null;
+  renderBoard();
+});
 
         const cards = sec.querySelector(".k-cards");
         board[col.id].forEach((t) => {
@@ -1516,22 +1586,48 @@
             if (e.target.classList.contains("del")) return;
             openModal(t.id);
           });
-          c.querySelector(".del").addEventListener("click", (e) => {
-            e.stopPropagation();
-            board[col.id] = board[col.id].filter((x) => x.id !== t.id);
-            renderBoard();
-          });
+          c.querySelector(".del").addEventListener("click", async (e) => {
+  e.stopPropagation();
+  try {
+    const token = localStorage.getItem("token");
+    await fetch(`http://localhost:5000/tasks/${t.id}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+  } catch (err) {
+    console.error("Failed to delete task:", err);
+  }
+  board[col.id] = board[col.id].filter((x) => x.id !== t.id);
+  renderBoard();
+});
           cards.appendChild(c);
         });
 
         const input = sec.querySelector(".k-input");
-        input.addEventListener("keydown", (e) => {
-          if (e.key !== "Enter") return;
-          const text = input.value.trim(); if (!text) return;
-          board[col.id].push({ id: "b" + bid++, text, desc: "", priority: "Moyenne", assignee: "Non assigné", due: "" });
-          renderBoard();
-        });
+        input.addEventListener("keydown", async (e) => {
+  if (e.key !== "Enter") return;
+  const text = input.value.trim(); if (!text) return;
 
+  try {
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+    const res = await fetch("http://localhost:5000/tasks", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ title: text, user_id: userId, status: col.id === "doing" ? "in_progress" : col.id })
+    });
+    const data = await res.json();
+    board[col.id].push({ id: data.taskId, text, desc: "", priority: "Medium", assignee: "No one", due: "" });
+  } catch (err) {
+    console.error("Failed to create task:", err);
+    board[col.id].push({ id: "b" + bid++, text, desc: "", priority: "Medium", assignee: "No one", due: "" });
+  }
+
+  renderBoard();
+});
         wrap.appendChild(sec);
       });
     }
@@ -1580,20 +1676,40 @@
       $("#ov").addEventListener("click", (e) => { if (e.target.id === "ov") close(); });
       function esc(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); } }
       document.addEventListener("keydown", esc);
-      $("#m-save").addEventListener("click", () => {
-        t.text = $("#m-title").value.trim() || t.text;
-        t.desc = $("#m-desc").value;
-        t.priority = $("#m-prio").value;
-        t.assignee = $("#m-assignee").value;
-        t.due = $("#m-due").value;
-        const newStatus = $("#m-status").value;
-        const targetCol = BCOLS.find((c) => c.status === newStatus).id;
-        if (targetCol !== col) {
-          board[col] = board[col].filter((x) => x.id !== id);
-          board[targetCol].push(t);
-        }
-        close(); renderBoard();
-      });
+      $("#m-save").addEventListener("click", async () => {
+  t.text = $("#m-title").value.trim() || t.text;
+  t.desc = $("#m-desc").value;
+  t.priority = $("#m-prio").value;
+  t.assignee = $("#m-assignee").value;
+  t.due = $("#m-due").value;
+  const newStatus = $("#m-status").value;
+  const targetCol = BCOLS.find((c) => c.status === newStatus).id;
+  if (targetCol !== col) {
+    board[col] = board[col].filter((x) => x.id !== id);
+    board[targetCol].push(t);
+  }
+
+  // Save to backend
+  try {
+    const token = localStorage.getItem("token");
+    await fetch(`http://localhost:5000/tasks/${t.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+  title: t.text,
+  status: targetCol === "doing" ? "in_progress" : targetCol
+})
+    });
+  } catch (err) {
+    console.error("Failed to save task:", err);
+  }
+
+  close();
+  renderBoard();
+});
     }
 
     show("home");
@@ -1614,6 +1730,41 @@
         menu.style.display = "none";
       });
     }
+
+    async function loadTasks() {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch("http://localhost:5000/tasks", {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    const tasks = await res.json();
+    return tasks;
+  } catch (err) {
+    console.error("Error loading tasks:", err);
+    return null;
+  }
+}
+
+
+function formatTasks(tasks) {
+  const board = { todo: [], doing: [], done: [] };
+  tasks.forEach(task => {
+    const normalized = {
+      id: task.id,
+      text: task.title,
+      desc: "",
+      priority: "Medium",
+      assignee: "No one",
+      due: ""
+    };
+    if (task.status === "todo") board.todo.push(normalized);
+    else if (task.status === "in_progress") board.doing.push(normalized);
+    else if (task.status === "done") board.done.push(normalized);
+  });
+  return board;
+}
   </script>
 </body>
 
