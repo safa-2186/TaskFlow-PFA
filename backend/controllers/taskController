@@ -86,3 +86,27 @@ exports.patchTaskStatus = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// GET WEEKLY STATS
+exports.getWeeklyStats = async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT 
+        DAYOFWEEK(created_at) as day,
+        COUNT(*) as count
+      FROM tasks
+      WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+      GROUP BY DAYOFWEEK(created_at)
+    `);
+
+    // Build array for all 7 days (0 if no tasks that day)
+    const result = [0, 0, 0, 0, 0, 0, 0];
+    rows.forEach(row => {
+      result[row.day - 1] = row.count;
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
