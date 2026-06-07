@@ -14,6 +14,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/tasks", taskRoutes);
+app.use("/users", require("./routes/authRoutes"));
 
 
 db.getConnection()

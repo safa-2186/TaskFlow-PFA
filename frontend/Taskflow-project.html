@@ -1246,10 +1246,10 @@ if (type === 'login') {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        name,
+      user_name: name,
         email,
         password
-      })
+})
     });
 
     const data = await res.json();
