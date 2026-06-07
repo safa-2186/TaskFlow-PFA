@@ -1377,10 +1377,11 @@ if (type === 'login') {
     const NAV = ["Dashboard", "Tasks", "Project"];
     let currentUser = null;
     let view = "Dashboard";
+    let weeklyData = null;
 
     const STATUSES = ["To Do", "In Progress", "Done"];
     const PRIORITIES = { "Low": "#64748b", "Medium": "#2563eb", "High": "#dc2626" };
-    const ASSIGNEES = ["No one", "Me", "Safa", "Hafssa"];
+    const ASSIGNEES = ["No one", "Adam", "Safa", "Hafssa", "Laila"];
 
     const BCOLS = [
       { id: "todo", title: "To Do", accent: "#2563eb", status: "To Do" },
@@ -1439,8 +1440,20 @@ if (type === 'login') {
       const title = $("#view-title"), sub = $("#view-sub"), body = $("#view-body");
       if (view === "Dashboard") {
         title.textContent = "Hello, " + currentUser;
-        sub.textContent = " Here’s what’s happening in your workspace.";
+        sub.textContent = " Here's what's happening in your workspace.";
+
+      const token = localStorage.getItem("token");
+
+  Promise.all([
+    loadTasks(),
+      fetch("http://localhost:5000/tasks/stats/weekly", {
+        headers: { "Authorization": `Bearer ${token}` }
+      }).then(r => r.json())
+    ]).then(([tasks, weekly]) => {
+      if (tasks) board = formatTasks(tasks);
+        weeklyData = weekly;
         body.innerHTML = dashboardHTML();
+    });
       } else if (view === "Tasks") {
         title.textContent = "Tasks";
         sub.textContent = "Drag the cards between the columns. Click to edit.";
@@ -1498,11 +1511,15 @@ if (type === 'login') {
     }
 
     function dashboardHTML() {
+      const todo = board.todo.length;
+      const doing = board.doing.length;
+      const done = board.done.length;
+
       const cards = [
-        ["Tasks open", 8, "#2563eb"], ["In progress", 3, "#3b82f6"],
-        ["Completed", 24, "#16a34a"], ["Overdue", 1, "#dc2626"],
+        ["Tasks open", todo, "#2563eb"], ["In progress", doing, "#3b82f6"],
+        ["Completed", done, "#16a34a"], ["Overdue", 1, "#dc2626"],
       ];
-      const weekly = [4, 7, 3, 8, 6, 9, 5], days = ["D", "L", "M", "M", "J", "V", "S"];
+      const weekly = weeklyData || [0, 0, 0, 0, 0, 0, 0], days = ["D", "L", "M", "M", "J", "V", "S"];
       const activity = [
         ["Q3 plan drafted", "2 hours ago"], ["'Configuration' completed", "5 hours ago"],
         ["'Références' → completed", "Yesterday"], ["Table 'start' created", "2 days ago"],
