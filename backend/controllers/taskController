@@ -1,5 +1,6 @@
 const db = require("../db");
 
+// GET ALL TASKS
 exports.getAllTasks = async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -11,6 +12,7 @@ exports.getAllTasks = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 
 
@@ -29,26 +31,26 @@ exports.createTask = async (req, res) => {
     );
 
     res.status(201).json({ id: result.insertId, title, status: "todo" });
-    
+
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
 
-
+// UPDATE TASK
 exports.updateTask = async (req, res) => {
-  const { id } = req.params;
-  const { title, status } = req.body;
-
   try {
-    const [result] = await db.query(
-      "UPDATE tasks SET title = COALESCE(?, title), status = COALESCE(?, status) WHERE id = ?",
-      [title || null, status || null, id]
+    const { title, status } = req.body;
+
+    await db.query(
+      "UPDATE tasks SET title=?, status=? WHERE id=?",
+      [title, status, req.params.id]
     );
-    if (result.affectedRows === 0)
-      return res.status(404).json({ message: "Task not found" });
+
     res.json({ message: "Task updated" });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -56,15 +58,38 @@ exports.updateTask = async (req, res) => {
 
 
 
+// DELETE TASK
 
 exports.deleteTask = async (req, res) => {
-  const { id } = req.params;
-
   try {
-    const [result] = await db.query("DELETE FROM tasks WHERE id = ?", [id]);
-    if (result.affectedRows === 0)
-      return res.status(404).json({ message: "Task not found" });
+    await db.query(
+      "DELETE FROM tasks WHERE id=?",
+      [req.params.id]
+    );
+
     res.json({ message: "Task deleted" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// PATCH TASK STATUS (drag-drop)
+exports.patchTaskStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (!["todo", "in_progress", "done"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    await db.query(
+      "UPDATE tasks SET status=? WHERE id=?",
+      [status, req.params.id]
+    );
+
+    res.json({ message: "Status updated" });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

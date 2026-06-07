@@ -14,11 +14,14 @@ app.use(cors());
 
 
 app.get("/", (req, res) => {
-  res.send("It's working");
+  res.send("It's working!");
 });
 
 app.use("/tasks", taskRoutes);
 app.use("/api/auth", authRoutes);
+
+app.use("/users", require("./routes/authRoutes"));
+
 
 
 db.getConnection()
