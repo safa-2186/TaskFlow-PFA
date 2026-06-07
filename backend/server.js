@@ -1,7 +1,11 @@
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const db = require("./db");
 const taskRoutes = require("./routes/tasks");
+const authRoutes = require("./routes/authRoutes")
+
 
 const app = express();
 
@@ -14,6 +18,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/tasks", taskRoutes);
+app.use("/api/auth", authRoutes);
 
 
 db.getConnection()
