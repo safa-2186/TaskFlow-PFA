@@ -1527,7 +1527,7 @@ if (type === 'login') {
 
       const cards = [
         ["Tasks open", todo, "#2563eb"], ["In progress", doing, "#3b82f6"],
-        ["Completed", done, "#16a34a"], ["Overdue", 1, "#dc2626"],
+        ["Completed", done, "#16a34a"],
       ];
       const weekly = weeklyData || [0, 0, 0, 0, 0, 0, 0], days = ["D", "L", "M", "M", "J", "V", "S"];
       const activity = [
@@ -1674,34 +1674,34 @@ if (type === 'login') {
       root.innerHTML = `
       <div class="overlay" id="ov">
         <div class="modal" role="dialog">
-          <h2>Modifier la tâche</h2>
-          <label class="m-label">Titre</label>
+          <h2>Modify Tasks</h2>
+          <label class="m-label">Title</label>
           <input id="m-title" class="m-field" value="${escAttr(t.text)}" />
           <div style="margin-top:18px;">
             <label class="m-label">Description</label>
-            <textarea id="m-desc" class="m-field" placeholder="Détails optionnels…">${escHtml(t.desc || "")}</textarea>
+            <textarea id="m-desc" class="m-field" placeholder="Details…">${escHtml(t.desc || "")}</textarea>
           </div>
           <div class="m-row">
-            <div class="m-group"><label class="m-label">Statut</label>
+            <div class="m-group"><label class="m-label">Status</label>
               <select id="m-status" class="m-field">
                 ${STATUSES.map((s) => `<option ${s === statusOf(col) ? "selected" : ""}>${s}</option>`).join("")}
               </select></div>
-            <div class="m-group"><label class="m-label">Priorité</label>
+            <div class="m-group"><label class="m-label">Priority</label>
               <select id="m-prio" class="m-field">
                 ${Object.keys(PRIORITIES).map((p) => `<option ${p === t.priority ? "selected" : ""}>${p}</option>`).join("")}
               </select></div>
           </div>
           <div class="m-row">
-            <div class="m-group"><label class="m-label">Assigné à</label>
+            <div class="m-group"><label class="m-label">Assigned to</label>
               <select id="m-assignee" class="m-field">
                 ${ASSIGNEES.map((a) => `<option ${a === t.assignee ? "selected" : ""}>${a}</option>`).join("")}
               </select></div>
-            <div class="m-group"><label class="m-label">Échéance</label>
-              <input id="m-due" type="date" class="m-field" value="${t.due || ""}" /></div>
+            <div class="m-group"><label class="m-label">Due Date</label>
+              <input id="m-due" type="date" class="m-field" value="${t.due || ""}" />
           </div>
           <div class="m-actions">
-            <button class="btn-ghost" id="m-cancel">Annuler</button>
-            <button class="btn-solid" id="m-save">Enregistrer</button>
+            <button class="btn-ghost" id="m-cancel">Cancel</button>
+            <button class="btn-solid" id="m-save">Save</button>
           </div>
         </div>
       </div>`;
