@@ -1718,6 +1718,7 @@ if (type === 'login') {
     t.text = $("#m-title").value.trim() || t.text;
     t.desc = $("#m-desc").value;
     t.priority = $("#m-prio").value;
+    t.assignee = $("#m-assignee").value;
     t.due = $("#m-due").value;
     const newStatus = $("#m-status").value;
     const targetCol = BCOLS.find((c) => c.status === newStatus).id;
