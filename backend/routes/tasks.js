@@ -13,6 +13,7 @@ router.delete("/:id", auth, taskController.deleteTask);
 router.use(auth);
 
 router.get("/", taskController.getAllTasks);
+router.get("/stats/weekly", taskController.getWeeklyStats);
 router.post("/", taskController.createTask);
 router.put("/:id", taskController.updateTask);
 router.patch("/:id", taskController.patchTaskStatus);

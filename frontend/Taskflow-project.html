@@ -1162,88 +1162,7 @@
       }
 
       
-
-      // Toggle password character visibility
-
-      async function handleAuth(event, type) {
-  event.preventDefault();
-  const errorBanner = document.getElementById('errorBanner');
-  const errorMessage = document.getElementById('errorMessage');
-  errorBanner.classList.add('hidden');
-
-  if (type === 'login') {
-    const email    = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-
-    try {
-      const res  = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        errorMessage.textContent = data.message || 'Login failed.';
-        errorBanner.classList.remove('hidden');
-        showToast(data.message || 'Login failed.', true);
-        return;
-      }
-
-      // Save token and user to localStorage
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-
-      // Update UI with real user name from database
-      currentUser = data.user.user_name;
-      document.getElementById('userName').textContent = currentUser;
-      document.getElementById('avatar').textContent = currentUser.slice(0, 2).toUpperCase();
-
-      showToast('Success! Logging you in...', false);
-      view = 'Dashboard';
-      renderView();
-      setTimeout(() => show('dashboard'), 1000);
-
-    } catch (err) {
-      showToast('Could not reach the server. Is it running?', true);
-    }
-
-  } else if (type === 'register') {
-    const user_name = document.getElementById('registerName').value;
-    const email     = document.getElementById('registerEmail').value;
-    const password  = document.getElementById('registerPassword').value;
-    const terms     = document.getElementById('terms').checked;
-
-    if (!terms) {
-      showToast('Please accept the terms to continue.', true);
-      return;
-    }
-
-    try {
-      const res  = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_name, email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        errorMessage.textContent = data.message || 'Registration failed.';
-        errorBanner.classList.remove('hidden');
-        showToast(data.message || 'Registration failed.', true);
-        return;
-      }
-
-      showToast(`Account created for ${user_name}! Please sign in.`, false);
-      setTimeout(() => switchView(null, 'login'), 2000);
-
-    } catch (err) {
-      showToast('Could not reach the server. Is it running?', true);
-    }
-  }
-}
+      // Toggle password visibility for better UX
  
 
       function togglePasswordVisibility(inputId) {
@@ -1470,10 +1389,11 @@ if (type === 'login') {
     const NAV = ["Dashboard", "Tasks", "Project"];
     let currentUser = null;
     let view = "Dashboard";
+    let weeklyData = null;
 
     const STATUSES = ["To Do", "In Progress", "Done"];
     const PRIORITIES = { "Low": "#64748b", "Medium": "#2563eb", "High": "#dc2626" };
-    const ASSIGNEES = ["No one", "Me", "Safa", "Hafssa"];
+    const ASSIGNEES = ["No one", "Adam", "Safa", "Hafssa", "Laila"];
 
     const BCOLS = [
       { id: "todo", title: "To Do", accent: "#2563eb", status: "To Do" },
@@ -1504,42 +1424,15 @@ if (type === 'login') {
 
 
     $("#logout").addEventListener("click", () => {
-
-  localStorage.removeItem('token');  // ← ADD
-  localStorage.removeItem('user');   // ← ADD
-  currentUser = null;
-
   currentUser = null;
   localStorage.removeItem("token");
-
-
+  localStorage.removeItem("userId");
   const email = document.getElementById("loginEmail");
   const password = document.getElementById("loginPassword");
-
   if (email) email.value = "";
   if (password) password.value = "";
-
   show("home");
-
-      const avatar = document.getElementById("avatar");
-      const menu = document.getElementById("profileMenu");
-
-      if (avatar && menu) {
-        avatar.addEventListener("click", (e) => {
-          e.stopPropagation();
-
-          menu.style.display =
-            menu.style.display === "block"
-              ? "none"
-              : "block";
-        });
-
-        document.addEventListener("click", () => {
-          menu.style.display = "none";
-        });
-      }
-    });
-
+});
 
 
 
@@ -1559,25 +1452,29 @@ if (type === 'login') {
       const title = $("#view-title"), sub = $("#view-sub"), body = $("#view-body");
       if (view === "Dashboard") {
         title.textContent = "Hello, " + currentUser;
-        sub.textContent = " Here’s what’s happening in your workspace.";
+        sub.textContent = " Here's what's happening in your workspace.";
+
+      const token = localStorage.getItem("token");
+
+  Promise.all([
+    loadTasks(),
+      fetch("http://localhost:5000/tasks/stats/weekly", {
+        headers: { "Authorization": `Bearer ${token}` }
+      }).then(r => r.json())
+    ]).then(([tasks, weekly]) => {
+      if (tasks) board = formatTasks(tasks);
+        weeklyData = weekly;
         body.innerHTML = dashboardHTML();
+    });
       } else if (view === "Tasks") {
-        title.textContent = "Tasks";
-
-        sub.textContent = " Drag the cards between the columns. Click to edit.";
-        body.innerHTML = '<div class="k-board fade" id="k-board"></div>';
-        renderBoard();
-
-        sub.textContent = "Drag the cards between the columns. Click to edit.";
-        body.innerHTML = '<div class="k-board fade" id="k-board"></div>';
-        loadTasks().then(tasks => {
-          if (tasks) {
-            board = formatTasks(tasks);
-          }
-          renderBoard();
-        });
-
-      } else {
+  title.textContent = "Tasks";
+  sub.textContent = "Drag the cards between the columns. Click to edit.";
+  body.innerHTML = '<div class="k-board fade" id="k-board"></div>';
+  loadTasks().then(tasks => {
+    if (tasks) board = formatTasks(tasks);
+    renderBoard();
+  });
+} else {
         title.textContent = view;
         sub.textContent = "Coming soon.";
         body.innerHTML = '<div class="empty fade"><span class="icon">◷</span><p>' + view + ' — Coming soon.</p></div>';
@@ -1624,11 +1521,15 @@ if (type === 'login') {
     }
 
     function dashboardHTML() {
+      const todo = board.todo.length;
+      const doing = board.doing.length;
+      const done = board.done.length;
+
       const cards = [
-        ["Tasks open", 8, "#2563eb"], ["In progress", 3, "#3b82f6"],
-        ["Completed", 24, "#16a34a"], ["Overdue", 1, "#dc2626"],
+        ["Tasks open", todo, "#2563eb"], ["In progress", doing, "#3b82f6"],
+        ["Completed", done, "#16a34a"],
       ];
-      const weekly = [4, 7, 3, 8, 6, 9, 5], days = ["D", "L", "M", "M", "J", "V", "S"];
+      const weekly = weeklyData || [0, 0, 0, 0, 0, 0, 0], days = ["D", "L", "M", "M", "J", "V", "S"];
       const activity = [
         ["Q3 plan drafted", "2 hours ago"], ["'Configuration' completed", "5 hours ago"],
         ["'Références' → completed", "Yesterday"], ["Table 'start' created", "2 days ago"],
@@ -1667,14 +1568,6 @@ if (type === 'login') {
         sec.addEventListener("dragover", (e) => { e.preventDefault(); sec.classList.add("over"); });
         sec.addEventListener("dragleave", () => sec.classList.remove("over"));
 
-        sec.addEventListener("drop", () => {
-          sec.classList.remove("over");
-          if (!dragData || dragData.from === col.id) return;
-          const task = board[dragData.from].find((t) => t.id === dragData.id);
-          board[dragData.from] = board[dragData.from].filter((t) => t.id !== dragData.id);
-          board[col.id].push(task);
-          dragData = null; renderBoard();
-        });
 
         sec.addEventListener("drop", async () => {
   sec.classList.remove("over");
@@ -1723,11 +1616,6 @@ if (type === 'login') {
             openModal(t.id);
           });
 
-          c.querySelector(".del").addEventListener("click", (e) => {
-            e.stopPropagation();
-            board[col.id] = board[col.id].filter((x) => x.id !== t.id);
-            renderBoard();
-          });
 
           c.querySelector(".del").addEventListener("click", async (e) => {
   e.stopPropagation();
@@ -1749,37 +1637,31 @@ if (type === 'login') {
 
         const input = sec.querySelector(".k-input");
 
-        input.addEventListener("keydown", (e) => {
-          if (e.key !== "Enter") return;
-          const text = input.value.trim(); if (!text) return;
-          board[col.id].push({ id: "b" + bid++, text, desc: "", priority: "Moyenne", assignee: "Non assigné", due: "" });
-          renderBoard();
-        });
 
         input.addEventListener("keydown", async (e) => {
-  if (e.key !== "Enter") return;
-  const text = input.value.trim(); if (!text) return;
+          if (e.key !== "Enter") return;
+            const text = input.value.trim(); if (!text) return;
 
-  try {
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
-    const res = await fetch("http://localhost:5000/tasks", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({ title: text, user_id: userId, status: col.id === "doing" ? "in_progress" : col.id })
-    });
-    const data = await res.json();
-    board[col.id].push({ id: data.taskId, text, desc: "", priority: "Medium", assignee: "No one", due: "" });
-  } catch (err) {
-    console.error("Failed to create task:", err);
-    board[col.id].push({ id: "b" + bid++, text, desc: "", priority: "Medium", assignee: "No one", due: "" });
-  }
+          try {
+            const token = localStorage.getItem("token");
+            const userId = localStorage.getItem("userId");
+            const res = await fetch("http://localhost:5000/tasks", {
+              method: "POST",
+              headers: {
+               "Content-Type": "application/json",
+               "Authorization": `Bearer ${token}`
+             },
+           body: JSON.stringify({ title: text, user_id: userId, status: col.id === "doing" ? "in_progress" : col.id })
+            });
+            const data = await res.json();
+            board[col.id].push({ id: data.taskId, text, desc: "", priority: "Medium", assignee: "No one", due: "" });
+          } catch (err) {
+            console.error("Failed to create task:", err);
+            board[col.id].push({ id: "b" + bid++, text, desc: "", priority: "Medium", assignee: "No one", due: "" });
+          }
 
-  renderBoard();
-});
+          renderBoard();
+          });
 
         wrap.appendChild(sec);
       });
@@ -1792,34 +1674,35 @@ if (type === 'login') {
       root.innerHTML = `
       <div class="overlay" id="ov">
         <div class="modal" role="dialog">
-          <h2>Modifier la tâche</h2>
-          <label class="m-label">Titre</label>
+          <h2>Modify Tasks</h2>
+          <label class="m-label">Title</label>
           <input id="m-title" class="m-field" value="${escAttr(t.text)}" />
           <div style="margin-top:18px;">
             <label class="m-label">Description</label>
-            <textarea id="m-desc" class="m-field" placeholder="Détails optionnels…">${escHtml(t.desc || "")}</textarea>
+            <textarea id="m-desc" class="m-field" placeholder="Details…">${escHtml(t.desc || "")}</textarea>
           </div>
           <div class="m-row">
-            <div class="m-group"><label class="m-label">Statut</label>
+            <div class="m-group"><label class="m-label">Status</label>
               <select id="m-status" class="m-field">
                 ${STATUSES.map((s) => `<option ${s === statusOf(col) ? "selected" : ""}>${s}</option>`).join("")}
               </select></div>
-            <div class="m-group"><label class="m-label">Priorité</label>
+            <div class="m-group"><label class="m-label">Priority</label>
               <select id="m-prio" class="m-field">
                 ${Object.keys(PRIORITIES).map((p) => `<option ${p === t.priority ? "selected" : ""}>${p}</option>`).join("")}
               </select></div>
           </div>
           <div class="m-row">
-            <div class="m-group"><label class="m-label">Assigné à</label>
+            <div class="m-group"><label class="m-label">Assigned to</label>
               <select id="m-assignee" class="m-field">
                 ${ASSIGNEES.map((a) => `<option ${a === t.assignee ? "selected" : ""}>${a}</option>`).join("")}
               </select></div>
-            <div class="m-group"><label class="m-label">Échéance</label>
-              <input id="m-due" type="date" class="m-field" value="${t.due || ""}" /></div>
+            <div class="m-group"><label class="m-label">Due Date</label>
+              <input id="m-due" type="date" class="m-field" value="${t.due || ""}" />
           </div>
+        </div>
           <div class="m-actions">
-            <button class="btn-ghost" id="m-cancel">Annuler</button>
-            <button class="btn-solid" id="m-save">Enregistrer</button>
+            <button class="btn-ghost" id="m-cancel">Cancel</button>
+            <button class="btn-solid" id="m-save">Save</button>
           </div>
         </div>
       </div>`;
@@ -1830,30 +1713,15 @@ if (type === 'login') {
       function esc(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); } }
       document.addEventListener("keydown", esc);
 
-      $("#m-save").addEventListener("click", () => {
-        t.text = $("#m-title").value.trim() || t.text;
-        t.desc = $("#m-desc").value;
-        t.priority = $("#m-prio").value;
-        t.assignee = $("#m-assignee").value;
-        t.due = $("#m-due").value;
-        const newStatus = $("#m-status").value;
-        const targetCol = BCOLS.find((c) => c.status === newStatus).id;
-        if (targetCol !== col) {
-          board[col] = board[col].filter((x) => x.id !== id);
-          board[targetCol].push(t);
-        }
-        close(); renderBoard();
-      });
 
       $("#m-save").addEventListener("click", async () => {
-  t.text = $("#m-title").value.trim() || t.text;
-  t.desc = $("#m-desc").value;
-  t.priority = $("#m-prio").value;
-  t.assignee = $("#m-assignee").value;
-  t.due = $("#m-due").value;
-  const newStatus = $("#m-status").value;
-  const targetCol = BCOLS.find((c) => c.status === newStatus).id;
-  if (targetCol !== col) {
+    t.text = $("#m-title").value.trim() || t.text;
+    t.desc = $("#m-desc").value;
+    t.priority = $("#m-prio").value;
+    t.due = $("#m-due").value;
+    const newStatus = $("#m-status").value;
+    const targetCol = BCOLS.find((c) => c.status === newStatus).id;
+    if (targetCol !== col) {
     board[col] = board[col].filter((x) => x.id !== id);
     board[targetCol].push(t);
   }

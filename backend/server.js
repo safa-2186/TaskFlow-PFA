@@ -13,8 +13,10 @@ app.use(express.json());
 app.use(cors());
 
 
+const path = require("path");
+
 app.get("/", (req, res) => {
-  res.send("It's working!");
+  res.sendFile(path.join(__dirname, "../frontend/Taskflow-project.html"));
 });
 
 app.use("/tasks", taskRoutes);
