@@ -1466,6 +1466,7 @@ if (type === 'login') {
       if (tasks) board = formatTasks(tasks);
         weeklyData = weekly;
         body.innerHTML = dashboardHTML();
+        loadActivity();
     });
       } else if (view === "Tasks") {
   title.textContent = "Tasks";
@@ -1530,11 +1531,8 @@ if (type === 'login') {
         ["Tasks open", todo, "#2563eb"], ["In progress", doing, "#3b82f6"],
         ["Completed", done, "#16a34a"],
       ];
-      const weekly = weeklyData || [0, 0, 0, 0, 0, 0, 0], days = ["D", "L", "M", "M", "J", "V", "S"];
-      const activity = [
-        ["Q3 plan drafted", "2 hours ago"], ["'Configuration' completed", "5 hours ago"],
-        ["'Références' → completed", "Yesterday"], ["Table 'start' created", "2 days ago"],
-      ];
+      const weekly = weeklyData || [0, 0, 0, 0, 0, 0, 0], days = ["S", "M", "T", "W", "T", "F", "S"];
+      
       return `
       <div class="metric-grid fade">
         ${cards.map(([l, v, c]) => `
@@ -1547,10 +1545,7 @@ if (type === 'login') {
             <div class="bar" style="height:${v * 11}px"></div>
             <span class="lbl">${days[i]}</span></div>`).join("")}
         </div></section>
-        <section class="panel"><h3>History</h3><ul class="feed">
-          ${activity.map(([t, w]) => `<li><span class="dot"></span>
-            <span class="txt">${t}</span><span class="when">${w}</span></li>`).join("")}
-        </ul></section>
+        <section class="panel"><h3>History</h3><ul class="feed"></ul></section>
       </div>`;
     }
 
@@ -1751,6 +1746,40 @@ if (type === 'login') {
 });
 
     }
+
+async function loadActivity() {
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch('http://localhost:5000/tasks/activity', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    const feed = document.querySelector('.feed');
+    if (!feed) return;
+    feed.innerHTML = data.length === 0
+      ? '<li><span class="txt">No activity yet.</span></li>'
+      : data.map(item => `
+          <li>
+            <span class="dot"></span>
+            <span class="txt">${item.action}</span>
+            <span class="when">${timeAgo(item.created_at)}</span>
+          </li>`).join('');
+  } catch (err) {
+    console.error('Activity fetch error:', err);
+  }
+}
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins  = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days  = Math.floor(diff / 86400000);
+  if (mins < 1)   return 'Just now';
+  if (mins < 60)  return `${mins} minutes ago`;
+  if (hours < 24) return `${hours} hours ago`;
+  if (days === 1) return 'Yesterday';
+  return `${days} days ago`;
+}
 
     show("home");
     const avatar = document.getElementById("avatar");
