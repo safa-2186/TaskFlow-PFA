@@ -1,5 +1,20 @@
 const db = require("../db");
 
+// Log activity
+
+const logActivity = async (user_id, action) => {
+  try {
+
+    await db.query(
+      'INSERT INTO activity_log (user_id, action) VALUES (?, ?)',
+      [user_id, action]
+    );
+
+  } catch (err) {
+    console.error('Activity log error:', err.message);
+  }
+};
+
 // GET ALL TASKS
 exports.getAllTasks = async (req, res) => {
   try {
@@ -30,6 +45,9 @@ exports.createTask = async (req, res) => {
       [title, user_id]
     );
 
+    // Log the activity
+    await logActivity(user_id, `Created task "${title}"`);
+
     res.status(201).json({ id: result.insertId, title, status: "todo" });
 
 
@@ -49,6 +67,15 @@ exports.updateTask = async (req, res) => {
       [title, status, req.params.id]
     );
 
+    // Log based on status
+    if (status === 'done'){
+      await logActivity(req.user.id, `Completed task "${title}"`);
+    } else if (status === 'in_progress') {
+      await logActivity(req.user.id, `Started task "${title}"`);
+    } else {
+      await logActivity(req.user.id, `Updated task "${title}"`);
+    }
+
     res.json({ message: "Task updated" });
 
   } catch (err) {
@@ -62,10 +89,25 @@ exports.updateTask = async (req, res) => {
 
 exports.deleteTask = async (req, res) => {
   try {
+
+    // Get the task title before deleting so we can log it 
+
+    const [rows] = await db.query(
+      "SELECT title FROM tasks WHERE id=?",
+      [req.params.id]
+    );
+
+
     await db.query(
       "DELETE FROM tasks WHERE id=?",
       [req.params.id]
     );
+
+    // Log the activity
+
+    if (rows.length > 0) {
+      await logActivity(req.user.id, `Deleted task "${rows[0].title}"`);
+    }
 
     res.json({ message: "Task deleted" });
 
@@ -83,10 +125,29 @@ exports.patchTaskStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid status" });
     }
 
+    // Get the task title so we can log it 
+    
+    const [rows] = await db.query(
+      "SELECT title FROM tasks WHERE id=?",
+      [req.params.id]
+    );
+
     await db.query(
       "UPDATE tasks SET status=? WHERE id=?",
       [status, req.params.id]
     );
+
+    // Log based on new status
+    if (rows.length > 0) {
+      const title = rows[0].title;
+      if (status === 'done') {
+        await logActivity(req.user.id, `Completed task "${title}"`);
+      } else if (status === 'in_progress') {
+        await logActivity(req.user.id, `Started task "${title}"`)
+      } else {
+        await logActivity(req.user.id, `Moved task "${title}" to To Do`);
+      }
+    }
 
     res.json({ message: "Status updated" });
 
@@ -114,6 +175,25 @@ exports.getWeeklyStats = async (req, res) => {
     });
 
     res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+// Get Activity Log
+
+exports.getActivity = async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT action, created_at
+       FROM activity_log
+       WHERE user_id = ?
+       ORDER BY created_at DESC
+       LIMIT 10`,
+       [req.user.id]
+    );
+    res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
