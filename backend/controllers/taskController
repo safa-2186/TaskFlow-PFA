@@ -33,7 +33,7 @@ exports.getAllTasks = async (req, res) => {
 
 exports.createTask = async (req, res) => {
 
-  const { title } = req.body;
+  const { title, assignee, priority, due_date } = req.body;
   const user_id = req.user.id;
 
   if (!title) return res.status(400).json({ error: "Title is required" });
@@ -41,8 +41,8 @@ exports.createTask = async (req, res) => {
   try {
 
     const [result] = await db.query(
-      "INSERT INTO tasks (title, user_id) VALUES (?, ?)",
-      [title, user_id]
+      "INSERT INTO tasks (title, user_id, assignee, priority, due_date) VALUES (?, ?, ?, ?, ?)",
+      [title, user_id, assignee || "No one", priority || "Medium", due_date || null]
     );
 
     // Log the activity
@@ -60,11 +60,11 @@ exports.createTask = async (req, res) => {
 // UPDATE TASK
 exports.updateTask = async (req, res) => {
   try {
-    const { title, status } = req.body;
+    const { title, status, assignee, priority, due_date } = req.body;
 
     await db.query(
-      "UPDATE tasks SET title=?, status=? WHERE id=?",
-      [title, status, req.params.id]
+      "UPDATE tasks SET title=?, status=?, assignee=?, priority=?, due_date=? WHERE id=?",
+      [title, status, assignee, priority, due_date || null, req.params.id]
     );
 
     // Log based on status
