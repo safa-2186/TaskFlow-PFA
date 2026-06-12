@@ -1647,7 +1647,7 @@ if (type === 'login') {
                "Content-Type": "application/json",
                "Authorization": `Bearer ${token}`
              },
-           body: JSON.stringify({ title: text, user_id: userId, status: col.id === "doing" ? "in_progress" : col.id })
+           body: JSON.stringify({ title: text, status: col.id === "doing" ? "in_progress" : col.id, assignee: "No one", priority: "Medium" })
             });
             const data = await res.json();
             board[col.id].push({ id: data.taskId, text, desc: "", priority: "Medium", assignee: "No one", due: "" });
@@ -1734,7 +1734,10 @@ if (type === 'login') {
       },
       body: JSON.stringify({
   title: t.text,
-  status: targetCol === "doing" ? "in_progress" : targetCol
+  status: targetCol === "doing" ? "in_progress" : targetCol,
+  assignee: t.assignee,
+  priority: t.priority,
+  due_date: t.due || null
 })
     });
   } catch (err) {
@@ -1826,9 +1829,9 @@ function formatTasks(tasks) {
       id: task.id,
       text: task.title,
       desc: "",
-      priority: "Medium",
-      assignee: "No one",
-      due: ""
+      priority: task.priority || "Medium",
+      assignee: task.assignee || "No one",
+      due: task.due_date || ""
     };
     if (task.status === "todo") board.todo.push(normalized);
     else if (task.status === "in_progress") board.doing.push(normalized);
