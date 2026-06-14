@@ -100,7 +100,26 @@ exports.login = async (req, res) => {
 
 };
 
+exports.updateProfile = async (req, res) => {
+  try {
+    const { user_name } = req.body;
 
+    if (!user_name) {
+      return res.status(400).json({ message: 'Username is required.' });
+    }
+
+    await db.query(
+      'UPDATE users SET user_name = ? WHERE id = ?',
+      [user_name, req.user.id]
+    );
+
+    res.json({ message: 'Profile updated successfully.', user_name });
+
+  } catch (err) {
+    console.error('Update profile error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
 
 
 

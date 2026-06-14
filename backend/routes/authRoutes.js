@@ -8,4 +8,6 @@ router.post('/register', register);
 // POST /api/auth/login
 router.post('/login', login);
 
+router.put('/profile', require('../middleware/authMiddleware'), require('../controllers/authController').updateProfile);
+
 module.exports = router;
