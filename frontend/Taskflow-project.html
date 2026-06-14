@@ -1208,6 +1208,8 @@ if (type === 'login') {
     if (res.ok) {
   // Save token
   if (data.token) localStorage.setItem("token", data.token);
+  localStorage.setItem("user", JSON.stringify(data.user));
+  localStorage.setItem("userId", data.user.id);
 
   currentUser = data.user.user_name;
   document.getElementById("userName").textContent = currentUser;
@@ -1355,7 +1357,7 @@ if (type === 'login') {
             box-shadow:0 10px 25px rgba(0,0,0,.1);
             z-index:9999;
          ">
-            <p style="padding:8px;cursor:pointer;">My Profile</p>
+            <p style="padding:8px;cursor:pointer;" onclick="view='Profile'; renderView(); document.getElementById('profileMenu').style.display='none';">My Profile</p>
             
             <hr>
             <p id="logoutMenu" style="padding:8px;cursor:pointer;color:red;" onclick="document.getElementById('logout').click()">
@@ -1476,6 +1478,86 @@ if (type === 'login') {
     if (tasks) board = formatTasks(tasks);
     renderBoard();
   });
+} else if (view === "Profile") {
+  title.textContent = "My Profile";
+  sub.textContent = "Update your account information.";
+  const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  body.innerHTML = `
+    <div class="fade panel" style="max-width:480px;">
+
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:14px;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:24px;">
+        <div class="avatar" style="width:64px;height:64px;font-size:22px;flex-shrink:0;">
+          ${currentUser.slice(0, 2).toUpperCase()}
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:16px;">${currentUser}</div>
+          <div style="font-size:13px;color:var(--muted);">${storedUser.email || ''}</div>
+        </div>
+      </div>
+
+      <!-- Name -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--line);">
+        <span style="font-weight:600;font-size:14px;">Name</span>
+        <input id="profile-username" style="text-align:right;border:none;background:transparent;color:var(--muted);font-size:14px;width:60%;" value="${currentUser}" />
+      </div>
+
+      <!-- Email (read only) -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--line);">
+        <span style="font-weight:600;font-size:14px;">Email account</span>
+        <span style="color:var(--muted);font-size:14px;">${storedUser.email || '—'}</span>
+      </div>
+
+      <!-- Password (decorative) -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--line);margin-bottom:24px;">
+        <span style="font-weight:600;font-size:14px;">Password</span>
+        <span style="color:var(--muted);font-size:18px;letter-spacing:3px;">••••••••••••</span>
+      </div>
+
+      <div id="profile-msg" style="font-size:13px;margin-bottom:12px;"></div>
+      <button id="profile-save" class="btn-solid" style="width:100%;">Save changes</button>
+    </div>
+  `;
+
+  document.getElementById('profile-save').addEventListener('click', async () => {
+    const newName = document.getElementById('profile-username').value.trim();
+    const msg = document.getElementById('profile-msg');
+
+    if (!newName) {
+      msg.style.color = 'var(--red)';
+      msg.textContent = 'Username cannot be empty.';
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/users/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ user_name: newName })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        currentUser = newName;
+        document.getElementById('userName').textContent = currentUser;
+        document.getElementById('avatar').textContent = currentUser.slice(0, 2).toUpperCase();
+        msg.style.color = 'var(--green)';
+        msg.textContent = 'Username updated successfully!';
+      } else {
+        msg.style.color = 'var(--red)';
+        msg.textContent = data.message || 'Update failed.';
+      }
+    } catch (err) {
+      msg.style.color = 'var(--red)';
+      msg.textContent = 'Cannot connect to server.';
+    }
+  });
+
 } else {
         title.textContent = view;
         sub.textContent = "Coming soon.";
