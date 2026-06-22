@@ -1231,7 +1231,7 @@ if (type === 'login') {
 
   try {
 
-    const res = await fetch("http://localhost:5000/users/login", {
+    const res = await fetch("https://taskflow-pfa-production.up.railway.app/users/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -1294,7 +1294,7 @@ if (type === 'login') {
 
   try {
 
-    const res = await fetch("http://localhost:5000/users/register", {
+    const res = await fetch("https://taskflow-pfa-production.up.railway.app/users/register", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -1544,7 +1544,7 @@ if (type === 'login') {
 
   Promise.all([
     loadTasks(),
-      fetch("http://localhost:5000/tasks/stats/weekly", {
+      fetch("https://taskflow-pfa-production.up.railway.app/tasks/stats/weekly", {
         headers: { "Authorization": `Bearer ${token}` }
       }).then(r => r.json())
     ]).then(([tasks, weekly]) => {
@@ -1614,7 +1614,7 @@ if (type === 'login') {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/users/profile', {
+      const res = await fetch('https://taskflow-pfa-production.up.railway.app/users/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1740,7 +1740,7 @@ if (type === 'login') {
   // Save new status to backend
   try {
     const token = localStorage.getItem("token");
-    await fetch(`http://localhost:5000/tasks/${task.id}`, {
+    await fetch(`https://taskflow-pfa-production.up.railway.app/tasks/${task.id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -1782,7 +1782,7 @@ if (type === 'login') {
   e.stopPropagation();
   try {
     const token = localStorage.getItem("token");
-    await fetch(`http://localhost:5000/tasks/${t.id}`, {
+    await fetch(`https://taskflow-pfa-production.up.railway.app/tasks/${t.id}`, {
       method: "DELETE",
       headers: { "Authorization": `Bearer ${token}` }
     });
@@ -1806,7 +1806,7 @@ if (type === 'login') {
           try {
             const token = localStorage.getItem("token");
             const userId = localStorage.getItem("userId");
-            const res = await fetch("http://localhost:5000/tasks", {
+            const res = await fetch("https://taskflow-pfa-production.up.railway.app/tasks", {
               method: "POST",
               headers: {
                "Content-Type": "application/json",
@@ -1891,7 +1891,7 @@ if (type === 'login') {
   // Save to backend
   try {
     const token = localStorage.getItem("token");
-    await fetch(`http://localhost:5000/tasks/${t.id}`, {
+    await fetch(`https://taskflow-pfa-production.up.railway.app/tasks/${t.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -1918,7 +1918,7 @@ if (type === 'login') {
 async function loadActivity() {
   const token = localStorage.getItem('token');
   try {
-    const res = await fetch('http://localhost:5000/tasks/activity', {
+    const res = await fetch('https://taskflow-pfa-production.up.railway.app/tasks/activity', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await res.json();
@@ -1973,7 +1973,7 @@ function timeAgo(dateStr) {
     async function loadTasks() {
   try {
     const token = localStorage.getItem("token");
-    const res = await fetch("http://localhost:5000/tasks", {
+    const res = await fetch("https://taskflow-pfa-production.up.railway.app/tasks", {
       headers: {
         "Authorization": `Bearer ${token}`
       }
