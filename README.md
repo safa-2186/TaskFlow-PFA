@@ -13,7 +13,16 @@ The dashboard summarizes open,in progress,and completed tasks, shows a weekly ac
 
 ## Tech stack
 
-The frontend is built with HTML,CSS,and JavaScript.The backend runs on Node.js with Express, connected to a MySQL database.Authentication uses bcryptjs for passwordhashing and jsonwebtoken for session tokens.
+The frontend is built with HTML,CSS,and JavaScript,styled using tailwind CSS.The backend runs on Node.js with Express, connected to a MySQL database.Authentication uses bcryptjs for passwordhashing and jsonwebtoken for session tokens.
+
+The app is deployed with frontend hosted on Netlify and the backend and database hosted on Railway.
+
+
+
+## Live demo
+
+- Frontend : https://tskkflow.netlify.app
+- Backend : https://taskflow-pfa-production.up.railway.app
 
 
 ## Project structure
@@ -83,7 +92,7 @@ cd TaskFlow-PFA/backend
 npm install
 ```
 
-Create a .env file with your local configuration.
+Create a .env file inside backend with your local configuration.
 
 ```bash
 PORT=5000
@@ -99,6 +108,31 @@ Run the SQL shema above to set up the database,then start the server.
 ```bash
 node server.js
 ```
+
+## Deployment
+
+The project is split across two platforms : Railway hosts the backend and the MySQL database, and Netlify hosts the static frontend.
+
+### Backend on Railway
+
+Create a new Railway project, add a MySQL database service,then add a second service connected to the backend folder of this repository. Set the following environment variables using the values from the MySQL services :
+
+
+```bash
+DB_HOST=<railway mysql host>
+DB_USER=<railway mysql user>
+DB_PASSWORD=<railway mysql password>
+DB_NAME=<railway mysql database>
+JWT_SECRET=<your secret key>
+PORT=5000
+```
+
+Set the root directory to /backend in the service settings, then generate a public domain under Networking.
+
+
+### Frontend on Netlify
+
+Replace every http://localhost:5000 in frontend/index.html with your Railway backend URL, then connect the repository to Netlify with the base directory set to frontend. No build command is needed.
 
 ## API reference
 
@@ -121,3 +155,11 @@ Task endpoints require a valid token in the Authorization header.
 | DELETE | /tasks/:id | Delete a task |
 | GET | /tasks/activity | Get the recent activity log |
 | GET | /tasks/stats/weekly | Get weekly task statistics |
+
+
+## Team
+
+- Laila
+- Safa
+- Hafssa
+- Adam
